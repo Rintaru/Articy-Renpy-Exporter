@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
 )
 
 func main() {
@@ -13,13 +12,16 @@ func main() {
 		fmt.Println("error reading file:", err)
 		return
 	}
-	var cfg map[string]interface{}
-	if err := json.Unmarshal(data, &cfg); err != nil {
+	var parsed_data map[string]any
+	if err := json.Unmarshal(data, &parsed_data); err != nil {
 		fmt.Println("error parsing JSON:", err)
 		return
 	}
 
-	fmt.Println(reflect.TypeOf(cfg["Objects"]))
-	usersSlice, _ := cfg["Objects"].([]interface{})
-	fmt.Println(usersSlice[0])
+	for _, item := range parsed_data["Objects"].([]any) {
+		parsed_item := item.(map[string]any)
+
+		fmt.Println(parsed_item["Type"].(string))
+
+	}
 }
