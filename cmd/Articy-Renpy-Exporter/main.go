@@ -18,8 +18,10 @@ func get_packages(manifest_file_path string) map[string]string {
 		fmt.Println("error parsing JSON:", err)
 	}
 
-	for _, package_dict := range top_level_dictionary["Packages"].([]any) {
-		package_dict[]
+	for _, item := range top_level_dictionary["Packages"].([]any) {
+		parsed_item := item.(map[string]any)
+		parsed_item["Name"]
+		parsed_item["Files"]
 	}
 
 }
