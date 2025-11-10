@@ -6,8 +6,25 @@ import (
 	"os"
 )
 
+func get_packages(manifest_file_path string) map[string]string {
+	data, err := os.ReadFile(manifest_file_path)
+	if err != nil {
+		fmt.Println("error reading file:", err)
+	}
+
+	var top_level_dictionary map[string]any
+	err = json.Unmarshal(data, &top_level_dictionary)
+	if err != nil {
+		fmt.Println("error parsing JSON:", err)
+	}
+
+	for _, package_dict := range top_level_dictionary["Packages"].([]any) {
+		package_dict[]
+	}
+
+}
 func main() {
-	data, err := os.ReadFile("/mnt/c/GIT_REPOS/Visual_Novels/Practice_Export/articy_export/package_0100000000000110_objects.json")
+	data, err := os.ReadFile("/mnt/c/GIT_REPOS/Visual_Novels/Practice_Export/Organized_Export/package_0100000000000D66_objects.json")
 	if err != nil {
 		fmt.Println("error reading file:", err)
 		return
