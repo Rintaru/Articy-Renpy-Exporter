@@ -17,13 +17,13 @@ type Manifest struct {
 	} `json:"Packages"`
 }
 
-type Package_Objects struct {
-	Objects []struct {
-		Type       string `json:"Entity"`
-		Properties struct {
-		}
-	}
-}
+// type Package_Objects struct {
+// 	Objects []struct {
+// 		Type       string `json:"Entity"`
+// 		Properties struct {
+// 		}
+// 	}
+// }
 
 type Character struct {
 	Name       string
@@ -57,6 +57,9 @@ func ExtractPackageMap(top_level_path string, filename string) (map[string]strin
 // 	data
 // }
 
+func TechincalNametoID(top_level_path string, filename string) (map[string]string, error) {
+
+}
 func main() {
 	top_level_path := "/mnt/c/GIT_REPOS/Visual_Novels/Practice_Export/Organized_Export/"
 	package_map, err := ExtractPackageMap(top_level_path, "manifest.json")
