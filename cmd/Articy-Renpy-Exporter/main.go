@@ -17,8 +17,22 @@ type Manifest struct {
 	} `json:"Packages"`
 }
 
-func ExtractPackageMap(filename string) (map[string]string, error) {
-	data, err := os.ReadFile(filename)
+type Package_Objects struct {
+	Objects []struct {
+		Type       string `json:"Entity"`
+		Properties struct {
+		}
+	}
+}
+
+type Character struct {
+	Name       string
+	Image_path string
+}
+
+func ExtractPackageMap(top_level_path string, filename string) (map[string]string, error) {
+
+	data, err := os.ReadFile(top_level_path + filename)
 	if err != nil {
 		return nil, err
 	}
@@ -30,18 +44,28 @@ func ExtractPackageMap(filename string) (map[string]string, error) {
 
 	result := make(map[string]string)
 	for _, pkg := range manifest.Packages {
-		result[pkg.Name] = pkg.Files.Objects.FileName
+		result[pkg.Name] = top_level_path + pkg.Files.Objects.FileName
 	}
 	return result, nil
 }
 
+// func ExtractCharacterDefinitions(package_manifest map[string]string) (Character, error) {
+// 	data, err := os.ReadFile(package_manifest["Character_Exoorts"])
+// 	if err != nil {
+// 		return Character{}, err
+// 	}
+// 	data
+// }
+
 func main() {
-	package_map, err := ExtractPackageMap("/mnt/c/GIT_REPOS/Visual_Novels/Practice_Export/Organized_Export/manifest.json")
+	top_level_path := "/mnt/c/GIT_REPOS/Visual_Novels/Practice_Export/Organized_Export/"
+	package_map, err := ExtractPackageMap(top_level_path, "manifest.json")
 	if err != nil {
 		return
 	}
 	for key, value := range package_map {
 		fmt.Println(key, value)
 	}
+	// ExtractCharacterDefinitions(package_map)
 
 }
