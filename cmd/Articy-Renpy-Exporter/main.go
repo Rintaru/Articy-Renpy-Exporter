@@ -25,6 +25,13 @@ type Manifest struct {
 // 	}
 // }
 
+type Heirarchy struct {
+	Id            string       `json:"Id"`
+	TechnicalName string       `json:"TechnicalName"`
+	Type          string       `json:"Type"`
+	Children      *[]Heirarchy `Json:"Children,omitempty"`
+}
+
 type Character struct {
 	Name       string
 	Image_path string
@@ -57,7 +64,28 @@ func ExtractPackageMap(top_level_path string, filename string) (map[string]strin
 // 	data
 // }
 
-func TechincalNametoID(top_level_path string, filename string) (map[string]string, error) {
+func IdToTechnicalName(heirarchy_data *Heirarchy) (map[string]string, error) {
+	output := make(map[string]string, 0)
+	var queue []Heirarchy
+
+	output[heirarchy_data.Id] = heirarchy_data.TechnicalName
+
+	if heirarchy_data.Children == nil {
+		return output, nil
+	}
+	queue = append(queue, *heirarchy_data.Children...)
+	for len(queue) > 0 {
+		h := queue[0]
+		queue = queue[1:]
+		output[h.Id] = h.TechnicalName
+
+		if h.Children != nil {
+			queue = append(queue, *h.Children...)
+		}
+
+	}
+
+	return output, nil
 
 }
 func main() {
@@ -69,6 +97,25 @@ func main() {
 	for key, value := range package_map {
 		fmt.Println(key, value)
 	}
-	// ExtractCharacterDefinitions(package_map)
+
+	data, err := os.ReadFile(top_level_path + "hierarchy.json")
+	if err != nil {
+		fmt.Println("error loading JSON:", err)
+		return
+	}
+
+	var heirarchy_data Heirarchy
+	if err := json.Unmarshal(data, &heirarchy_data); err != nil {
+		fmt.Println("error parsing JSON:", err)
+		return
+	}
+
+	id_map, _ := IdToTechnicalName(&heirarchy_data)
+
+	fmt.Println(len(id_map))
+
+	for key, value := range id_map {
+		fmt.Println(key, value)
+	}
 
 }
