@@ -63,7 +63,7 @@ func ExtractPackageMap(top_level_path string, filename string) (map[string]strin
 }
 
 func ExtractCharacterDefinitions(package_manifest map[string]string) (Character, error) {
-	data, err := os.ReadFile(package_manifest["Character_Exoorts"])
+	data, err := os.ReadFile(package_manifest["Character_Exports"])
 	if err != nil {
 		return Character{}, err
 	}
