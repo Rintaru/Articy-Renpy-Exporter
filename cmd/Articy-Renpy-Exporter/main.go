@@ -6,41 +6,42 @@ import (
 	"os"
 )
 
-func get_packages(manifest_file_path string) map[string]string {
-	data, err := os.ReadFile(manifest_file_path)
-	if err != nil {
-		fmt.Println("error reading file:", err)
-	}
-
-	var top_level_dictionary map[string]any
-	err = json.Unmarshal(data, &top_level_dictionary)
-	if err != nil {
-		fmt.Println("error parsing JSON:", err)
-	}
-
-	for _, item := range top_level_dictionary["Packages"].([]any) {
-		parsed_item := item.(map[string]any)
-		parsed_item["Name"]
-		parsed_item["Files"]
-	}
-
+type Manifest struct {
+	Packages []struct {
+		Name  string `json:"Name"`
+		Files struct {
+			Objects struct {
+				FileName string `json:"FileName"`
+			} `json:"Objects"`
+		} `json:"Files"`
+	} `json:"Packages"`
 }
-func main() {
-	data, err := os.ReadFile("/mnt/c/GIT_REPOS/Visual_Novels/Practice_Export/Organized_Export/package_0100000000000D66_objects.json")
+
+func ExtractPackageMap(filename string) (map[string]string, error) {
+	data, err := os.ReadFile(filename)
 	if err != nil {
-		fmt.Println("error reading file:", err)
+		return nil, err
+	}
+
+	var manifest Manifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]string)
+	for _, pkg := range manifest.Packages {
+		result[pkg.Name] = pkg.Files.Objects.FileName
+	}
+	return result, nil
+}
+
+func main() {
+	package_map, err := ExtractPackageMap("/mnt/c/GIT_REPOS/Visual_Novels/Practice_Export/Organized_Export/manifest.json")
+	if err != nil {
 		return
 	}
-	var parsed_data map[string]any
-	if err := json.Unmarshal(data, &parsed_data); err != nil {
-		fmt.Println("error parsing JSON:", err)
-		return
+	for key, value := range package_map {
+		fmt.Println(key, value)
 	}
 
-	for _, item := range parsed_data["Objects"].([]any) {
-		parsed_item := item.(map[string]any)
-
-		fmt.Println(parsed_item["Type"].(string))
-
-	}
 }
