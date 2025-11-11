@@ -29,7 +29,7 @@ type Character struct {
 	Image_path string
 }
 
-type _Character_json struct {
+type _Character_package_json struct {
 	Objects []struct {
 		Type       string `json:"Type"`
 		Properties struct {
@@ -67,7 +67,7 @@ func ExtractCharacterDefinitions(package_manifest map[string]string) (Character,
 	if err != nil {
 		return Character{}, err
 	}
-	var _character _Character_json
+	var _character _Character_package_json
 	if err := json.Unmarshal(data, &_character); err != nil {
 		return Character{}, err
 	}
