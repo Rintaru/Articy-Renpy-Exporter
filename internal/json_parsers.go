@@ -4,20 +4,56 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 )
 
+type manifest_package struct {
+	Name  string `json:"Name"`
+	Files struct {
+		Objects struct {
+			FileName string `json:"FileName"`
+		} `json:"Objects"`
+		Texts struct {
+			FileName string `json:"FileName"`
+		} `json:"Texts"`
+	} `json:"Files"`
+}
+
 type Manifest_json struct {
-	Packages []struct {
-		Name  string `json:"Name"`
-		Files struct {
-			Objects struct {
-				FileName string `json:"FileName"`
-			} `json:"Objects"`
-			Texts struct {
-				FileName string `json:"FileName"`
-			} `json:"Texts"`
-		} `json:"Files"`
-	} `json:"Packages"`
+	Packages []manifest_package `json:"Packages"`
+}
+
+func (m *Manifest_json) From_file(file_path string) error {
+	parent_dir := path.Dir(file_path)
+	data, err := os.ReadFile(file_path)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	for index, _ := range m.Packages {
+		m.Packages[index].Files.Objects.FileName = path.Join(parent_dir, m.Packages[index].Files.Objects.FileName)
+		m.Packages[index].Files.Texts.FileName = path.Join(parent_dir, m.Packages[index].Files.Texts.FileName)
+	}
+
+	return nil
+}
+
+func (m Manifest_json) ObjectMap() map[string]string {
+	output_map := make(map[string]string, 0)
+	for _, pkg := range m.Packages {
+		output_map[pkg.Name] = pkg.Files.Objects.FileName
+	}
+	return output_map
+}
+
+func (m Manifest_json) LocalizationMap() map[string]string {
+	output_map := make(map[string]string, 0)
+	for _, pkg := range m.Packages {
+		output_map[pkg.Name] = pkg.Files.Texts.FileName
+	}
+	return output_map
 }
 
 type Heirarchy_json struct {
@@ -25,6 +61,34 @@ type Heirarchy_json struct {
 	TechnicalName string            `json:"TechnicalName"`
 	Type          string            `json:"Type"`
 	Children      *[]Heirarchy_json `Json:"Children,omitempty"`
+}
+
+func (m Heirarchy_json) From_file(file_path string) error {
+	data, err := os.ReadFile(file_path)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type Raw_Object_Json struct {
+	Objects []json.RawMessage `json:"Objects"`
+}
+
+func (r *Raw_Object_Json) From_file(file_path string) error {
+	data, err := os.ReadFile(file_path)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, &r); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type character_object struct {
@@ -47,51 +111,8 @@ type asset_object struct {
 type Asset_json = map[string]asset_object
 type Character_json = map[string]character_object
 
-func (m Manifest_json) from_file(top_level_path string, filename string) (*Manifest_json, error) {
-	data, err := os.ReadFile(top_level_path + filename)
-	if err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal(data, &m); err != nil {
-		return nil, err
-	}
-	return &m, nil
-}
-
-// extract manifest.json and map package name to the corresponding file path
-func ExtractPackageMap(top_level_path string, filename string) (map[string]string, error) {
-
-	data, err := os.ReadFile(top_level_path + filename)
-	if err != nil {
-		return nil, err
-	}
-
-	var manifest Manifest_json
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		return nil, err
-	}
-
-	result := make(map[string]string)
-	for _, pkg := range manifest.Packages {
-		result[pkg.Name] = top_level_path + pkg.Files.Objects.FileName
-	}
-	return result, nil
-}
-
 // extract characters and image assets into their respective list containers
-func ExtractCharacterPackages(package_manifest map[string]string) (Asset_json, Character_json, error) {
-	data, err := os.ReadFile(package_manifest["Character_Exports"])
-	if err != nil {
-		return Asset_json{}, Character_json{}, err
-	}
-
-	var raw struct {
-		Objects []json.RawMessage `json:"Objects"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		fmt.Println("error parsing JSON:", err)
-		return Asset_json{}, Character_json{}, err
-	}
+func ExtractCharacterPackages(raw_object *Raw_Object_Json) (Asset_json, Character_json, error) {
 
 	var type_only struct {
 		Type string `json:"Type"`
@@ -100,7 +121,7 @@ func ExtractCharacterPackages(package_manifest map[string]string) (Asset_json, C
 	asset_packages := make(Asset_json, 0)
 	character_packages := make(Character_json, 0)
 
-	for _, raw_item := range raw.Objects {
+	for _, raw_item := range raw_object.Objects {
 		if err := json.Unmarshal(raw_item, &type_only); err != nil {
 			fmt.Println("error parsing JSON:", err)
 			return Asset_json{}, Character_json{}, err
@@ -115,11 +136,10 @@ func ExtractCharacterPackages(package_manifest map[string]string) (Asset_json, C
 			var temp asset_object
 			json.Unmarshal(raw_item, &temp)
 			asset_packages[temp.Properties.TechnicalName] = temp
-
 		}
 	}
 
-	return asset_packages, character_packages, err
+	return asset_packages, character_packages, nil
 
 }
 
