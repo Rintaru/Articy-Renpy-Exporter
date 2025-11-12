@@ -7,7 +7,7 @@ import (
 	"path"
 )
 
-type manifest_package struct {
+type manifest_Package struct {
 	Name  string `json:"Name"`
 	Files struct {
 		Objects struct {
@@ -19,11 +19,11 @@ type manifest_package struct {
 	} `json:"Files"`
 }
 
-type Manifest_json struct {
-	Packages []manifest_package `json:"Packages"`
+type Manifest_Json struct {
+	Packages []manifest_Package `json:"Packages"`
 }
 
-func (m *Manifest_json) From_file(file_path string) error {
+func (m *Manifest_Json) FromFile(file_path string) error {
 	parent_dir := path.Dir(file_path)
 	data, err := os.ReadFile(file_path)
 	if err != nil {
@@ -32,7 +32,7 @@ func (m *Manifest_json) From_file(file_path string) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	for index, _ := range m.Packages {
+	for index := range m.Packages {
 		m.Packages[index].Files.Objects.FileName = path.Join(parent_dir, m.Packages[index].Files.Objects.FileName)
 		m.Packages[index].Files.Texts.FileName = path.Join(parent_dir, m.Packages[index].Files.Texts.FileName)
 	}
@@ -40,7 +40,7 @@ func (m *Manifest_json) From_file(file_path string) error {
 	return nil
 }
 
-func (m Manifest_json) ObjectMap() map[string]string {
+func (m *Manifest_Json) ObjectMap() map[string]string {
 	output_map := make(map[string]string, 0)
 	for _, pkg := range m.Packages {
 		output_map[pkg.Name] = pkg.Files.Objects.FileName
@@ -48,7 +48,7 @@ func (m Manifest_json) ObjectMap() map[string]string {
 	return output_map
 }
 
-func (m Manifest_json) LocalizationMap() map[string]string {
+func (m *Manifest_Json) LocalizationMap() map[string]string {
 	output_map := make(map[string]string, 0)
 	for _, pkg := range m.Packages {
 		output_map[pkg.Name] = pkg.Files.Texts.FileName
@@ -63,7 +63,7 @@ type Heirarchy_json struct {
 	Children      *[]Heirarchy_json `Json:"Children,omitempty"`
 }
 
-func (m *Heirarchy_json) From_file(file_path string) error {
+func (m *Heirarchy_json) FromFile(file_path string) error {
 	data, err := os.ReadFile(file_path)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ type Raw_Object_Json struct {
 	Objects []json.RawMessage `json:"Objects"`
 }
 
-func (r *Raw_Object_Json) From_file(file_path string) error {
+func (r *Raw_Object_Json) FromFile(file_path string) error {
 	data, err := os.ReadFile(file_path)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (r *Raw_Object_Json) From_file(file_path string) error {
 	return nil
 }
 
-type character_object struct {
+type character_Object struct {
 	Properties struct {
 		TechnicalName string `json:"TechnicalName"`
 		DisplayName   string `json:"DisplayName"`
@@ -100,7 +100,7 @@ type character_object struct {
 		} `json:"PreviewImage"`
 	} `json:"Properties"`
 }
-type asset_object struct {
+type asset_Object struct {
 	AssetRef   string `json:"AssetRef"`
 	Properties struct {
 		TechnicalName string `json:"TechnicalName"`
@@ -108,32 +108,32 @@ type asset_object struct {
 	} `json:"Properties"`
 }
 
-type Asset_json = map[string]asset_object
-type Character_json = map[string]character_object
+type Asset_Json = map[string]asset_Object
+type Character_Json = map[string]character_Object
 
 // extract characters and image assets into their respective list containers
-func ExtractCharacterPackages(raw_object *Raw_Object_Json) (Asset_json, Character_json, error) {
+func ExtractCharacterPackages(raw_object *Raw_Object_Json) (Asset_Json, Character_Json, error) {
 
 	var type_only struct {
 		Type string `json:"Type"`
 	}
 
-	asset_packages := make(Asset_json, 0)
-	character_packages := make(Character_json, 0)
+	asset_packages := make(Asset_Json, 0)
+	character_packages := make(Character_Json, 0)
 
 	for _, raw_item := range raw_object.Objects {
 		if err := json.Unmarshal(raw_item, &type_only); err != nil {
 			fmt.Println("error parsing JSON:", err)
-			return Asset_json{}, Character_json{}, err
+			return Asset_Json{}, Character_Json{}, err
 		}
 
 		switch type_only.Type {
 		case "Entity":
-			var temp character_object
+			var temp character_Object
 			json.Unmarshal(raw_item, &temp)
 			character_packages[temp.Properties.TechnicalName] = temp
 		case "Asset":
-			var temp asset_object
+			var temp asset_Object
 			json.Unmarshal(raw_item, &temp)
 			asset_packages[temp.Properties.TechnicalName] = temp
 		}
