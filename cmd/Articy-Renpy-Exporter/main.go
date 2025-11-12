@@ -30,33 +30,19 @@ type Character struct {
 }
 
 type _Character_package_json struct {
-	Objects []struct {
-		Type       string `json:"Type"`
-		Properties struct {
-			DisplayName  string `json:"DisplayName"`
-			Image_path   string `json:"Image_path"`
-			PreviewImage struct {
-				Asset string `json:"Asset"`
-			} `json:"PreviewImage"`
-		} `json:"Properties"`
-	} `json:"Objects"`
+	Properties struct {
+		DisplayName  string `json:"DisplayName"`
+		PreviewImage struct {
+			Asset string `json:"Asset"`
+		} `json:"PreviewImage"`
+	} `json:"Properties"`
 }
 type _Image_asset_package_json struct {
-	Objects []struct {
-		Type       string `json:"Type"`
-		AssetRef   string `json:"AssetRef"`
-		Properties struct {
-			TechnicalName string `json:"TechnicalName"`
-			Id            string `json:"Id"`
-		} `json:"Properties"`
-	} `json:"Objects"`
-}
-
-type _Package_json struct {
-	Objects []struct {
-		Type     string `json:"Type"`
-		raw_data []byte
-	} `json:"Objects"`
+	AssetRef   string `json:"AssetRef"`
+	Properties struct {
+		TechnicalName string `json:"TechnicalName"`
+		Id            string `json:"Id"`
+	} `json:"Properties"`
 }
 
 // func ExtractImageAssets(package_manifest map[string]string) (_Image_asset_package_json, error) {
@@ -83,23 +69,46 @@ func ExtractPackageMap(top_level_path string, filename string) (map[string]strin
 	return result, nil
 }
 
-func ExtractCharacterDefinitions(package_manifest map[string]string) (Character, error) {
+func ExtractPackages(package_manifest map[string]string) ([]_Image_asset_package_json, []_Character_package_json, error) {
 	data, err := os.ReadFile(package_manifest["Character_Exports"])
 	if err != nil {
-		return Character{}, err
+		return []_Image_asset_package_json{}, []_Character_package_json{}, err
 	}
-	var _character _Character_package_json
-	if err := json.Unmarshal(data, &_character); err != nil {
-		return Character{}, err
+
+	var raw struct {
+		Objects []json.RawMessage `json:"Objects"`
 	}
-	for _, object := range _character.Objects {
-		if object.Type != "Asset" {
-			continue
+	if err := json.Unmarshal(data, &raw); err != nil {
+		fmt.Println("error parsing JSON:", err)
+		return []_Image_asset_package_json{}, []_Character_package_json{}, err
+	}
+
+	var type_only struct {
+		Type string `json:"Type"`
+	}
+
+	var asset_packages []_Image_asset_package_json
+	var character_packages []_Character_package_json
+
+	for _, raw_item := range raw.Objects {
+		if err := json.Unmarshal(raw_item, &type_only); err != nil {
+			fmt.Println("error parsing JSON:", err)
+			return []_Image_asset_package_json{}, []_Character_package_json{}, err
 		}
-		fmt.Println(object.Properties.DisplayName, object.Properties.PreviewImage.Asset)
+
+		switch type_only.Type {
+		case "Entity":
+			var temp _Character_package_json
+			json.Unmarshal(raw_item, &temp)
+			character_packages = append(character_packages, temp)
+		case "Asset":
+			var temp _Image_asset_package_json
+			json.Unmarshal(raw_item, &temp)
+			asset_packages = append(asset_packages, temp)
+		}
 	}
-	// _character.Objects
-	return Character{}, err
+
+	return asset_packages, character_packages, err
 
 }
 
@@ -146,7 +155,7 @@ func main() {
 		fmt.Println("error parsing JSON:", err)
 		return
 	}
-	_, err = ExtractCharacterDefinitions(package_map)
+	_, _, err = ExtractPackages(package_map)
 	if err != nil {
 		fmt.Println("error extracting characters JSON:", err)
 		return
