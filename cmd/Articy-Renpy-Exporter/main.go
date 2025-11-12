@@ -41,6 +41,27 @@ type _Character_package_json struct {
 		} `json:"Properties"`
 	} `json:"Objects"`
 }
+type _Image_asset_package_json struct {
+	Objects []struct {
+		Type       string `json:"Type"`
+		AssetRef   string `json:"AssetRef"`
+		Properties struct {
+			TechnicalName string `json:"TechnicalName"`
+			Id            string `json:"Id"`
+		} `json:"Properties"`
+	} `json:"Objects"`
+}
+
+type _Package_json struct {
+	Objects []struct {
+		Type     string `json:"Type"`
+		raw_data []byte
+	} `json:"Objects"`
+}
+
+// func ExtractImageAssets(package_manifest map[string]string) (_Image_asset_package_json, error) {
+
+// }
 
 // extract manifest.json and map package name to the corresponding file path
 func ExtractPackageMap(top_level_path string, filename string) (map[string]string, error) {
@@ -71,7 +92,15 @@ func ExtractCharacterDefinitions(package_manifest map[string]string) (Character,
 	if err := json.Unmarshal(data, &_character); err != nil {
 		return Character{}, err
 	}
+	for _, object := range _character.Objects {
+		if object.Type != "Asset" {
+			continue
+		}
+		fmt.Println(object.Properties.DisplayName, object.Properties.PreviewImage.Asset)
+	}
 	// _character.Objects
+	return Character{}, err
+
 }
 
 // map Object IDs to Object TechnicalNames
@@ -105,9 +134,6 @@ func main() {
 	if err != nil {
 		return
 	}
-	for key, value := range package_map {
-		fmt.Println(key, value)
-	}
 
 	data, err := os.ReadFile(top_level_path + "hierarchy.json")
 	if err != nil {
@@ -120,13 +146,9 @@ func main() {
 		fmt.Println("error parsing JSON:", err)
 		return
 	}
-
-	id_map := IdToTechnicalName(&heirarchy_data)
-
-	fmt.Println(len(id_map))
-
-	for key, value := range id_map {
-		fmt.Println(key, value)
+	_, err = ExtractCharacterDefinitions(package_map)
+	if err != nil {
+		fmt.Println("error extracting characters JSON:", err)
+		return
 	}
-
 }
