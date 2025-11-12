@@ -6,13 +6,16 @@ import (
 	"os"
 )
 
-type _Manifest_json struct {
+type Manifest_json struct {
 	Packages []struct {
 		Name  string `json:"Name"`
 		Files struct {
 			Objects struct {
 				FileName string `json:"FileName"`
 			} `json:"Objects"`
+			Texts struct {
+				FileName string `json:"FileName"`
+			} `json:"Texts"`
 		} `json:"Files"`
 	} `json:"Packages"`
 }
@@ -29,15 +32,16 @@ type Character struct {
 	Image_path string
 }
 
-type Character_package_json struct {
+type Character_object_json struct {
 	Properties struct {
-		DisplayName  string `json:"DisplayName"`
-		PreviewImage struct {
+		TechnicalName string `json:"TechnicalName"`
+		DisplayName   string `json:"DisplayName"`
+		PreviewImage  struct {
 			Asset string `json:"Asset"`
 		} `json:"PreviewImage"`
 	} `json:"Properties"`
 }
-type Image_asset_package_json struct {
+type Image_asset_object_json struct {
 	AssetRef   string `json:"AssetRef"`
 	Properties struct {
 		TechnicalName string `json:"TechnicalName"`
@@ -53,7 +57,7 @@ func ExtractPackageMap(top_level_path string, filename string) (map[string]strin
 		return nil, err
 	}
 
-	var manifest _Manifest_json
+	var manifest Manifest_json
 	if err := json.Unmarshal(data, &manifest); err != nil {
 		return nil, err
 	}
@@ -65,11 +69,11 @@ func ExtractPackageMap(top_level_path string, filename string) (map[string]strin
 	return result, nil
 }
 
-// extract characters and image assets into a respective list
-func ExtractCharacterPackages(package_manifest map[string]string) ([]Image_asset_package_json, []Character_package_json, error) {
+// extract characters and image assets into their respective list containers
+func ExtractCharacterPackages(package_manifest map[string]string) (map[string]Image_asset_object_json, map[string]Character_object_json, error) {
 	data, err := os.ReadFile(package_manifest["Character_Exports"])
 	if err != nil {
-		return []Image_asset_package_json{}, []Character_package_json{}, err
+		return map[string]Image_asset_object_json{}, map[string]Character_object_json{}, err
 	}
 
 	var raw struct {
@@ -77,31 +81,32 @@ func ExtractCharacterPackages(package_manifest map[string]string) ([]Image_asset
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		fmt.Println("error parsing JSON:", err)
-		return []Image_asset_package_json{}, []Character_package_json{}, err
+		return map[string]Image_asset_object_json{}, map[string]Character_object_json{}, err
 	}
 
 	var type_only struct {
 		Type string `json:"Type"`
 	}
 
-	var asset_packages []Image_asset_package_json
-	var character_packages []Character_package_json
+	asset_packages := make(map[string]Image_asset_object_json, 0)
+	character_packages := make(map[string]Character_object_json, 0)
 
 	for _, raw_item := range raw.Objects {
 		if err := json.Unmarshal(raw_item, &type_only); err != nil {
 			fmt.Println("error parsing JSON:", err)
-			return []Image_asset_package_json{}, []Character_package_json{}, err
+			return map[string]Image_asset_object_json{}, map[string]Character_object_json{}, err
 		}
 
 		switch type_only.Type {
 		case "Entity":
-			var temp Character_package_json
+			var temp Character_object_json
 			json.Unmarshal(raw_item, &temp)
-			character_packages = append(character_packages, temp)
+			character_packages[temp.Properties.TechnicalName] = temp
 		case "Asset":
-			var temp Image_asset_package_json
+			var temp Image_asset_object_json
 			json.Unmarshal(raw_item, &temp)
-			asset_packages = append(asset_packages, temp)
+			asset_packages[temp.Properties.TechnicalName] = temp
+
 		}
 	}
 
