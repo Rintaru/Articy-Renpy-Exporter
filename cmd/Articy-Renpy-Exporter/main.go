@@ -29,7 +29,7 @@ type Character struct {
 	Image_path string
 }
 
-type _Character_package_json struct {
+type Character_package_json struct {
 	Properties struct {
 		DisplayName  string `json:"DisplayName"`
 		PreviewImage struct {
@@ -37,17 +37,13 @@ type _Character_package_json struct {
 		} `json:"PreviewImage"`
 	} `json:"Properties"`
 }
-type _Image_asset_package_json struct {
+type Image_asset_package_json struct {
 	AssetRef   string `json:"AssetRef"`
 	Properties struct {
 		TechnicalName string `json:"TechnicalName"`
 		Id            string `json:"Id"`
 	} `json:"Properties"`
 }
-
-// func ExtractImageAssets(package_manifest map[string]string) (_Image_asset_package_json, error) {
-
-// }
 
 // extract manifest.json and map package name to the corresponding file path
 func ExtractPackageMap(top_level_path string, filename string) (map[string]string, error) {
@@ -69,10 +65,11 @@ func ExtractPackageMap(top_level_path string, filename string) (map[string]strin
 	return result, nil
 }
 
-func ExtractPackages(package_manifest map[string]string) ([]_Image_asset_package_json, []_Character_package_json, error) {
+// extract characters and image assets into a respective list
+func ExtractCharacterPackages(package_manifest map[string]string) ([]Image_asset_package_json, []Character_package_json, error) {
 	data, err := os.ReadFile(package_manifest["Character_Exports"])
 	if err != nil {
-		return []_Image_asset_package_json{}, []_Character_package_json{}, err
+		return []Image_asset_package_json{}, []Character_package_json{}, err
 	}
 
 	var raw struct {
@@ -80,29 +77,29 @@ func ExtractPackages(package_manifest map[string]string) ([]_Image_asset_package
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		fmt.Println("error parsing JSON:", err)
-		return []_Image_asset_package_json{}, []_Character_package_json{}, err
+		return []Image_asset_package_json{}, []Character_package_json{}, err
 	}
 
 	var type_only struct {
 		Type string `json:"Type"`
 	}
 
-	var asset_packages []_Image_asset_package_json
-	var character_packages []_Character_package_json
+	var asset_packages []Image_asset_package_json
+	var character_packages []Character_package_json
 
 	for _, raw_item := range raw.Objects {
 		if err := json.Unmarshal(raw_item, &type_only); err != nil {
 			fmt.Println("error parsing JSON:", err)
-			return []_Image_asset_package_json{}, []_Character_package_json{}, err
+			return []Image_asset_package_json{}, []Character_package_json{}, err
 		}
 
 		switch type_only.Type {
 		case "Entity":
-			var temp _Character_package_json
+			var temp Character_package_json
 			json.Unmarshal(raw_item, &temp)
 			character_packages = append(character_packages, temp)
 		case "Asset":
-			var temp _Image_asset_package_json
+			var temp Image_asset_package_json
 			json.Unmarshal(raw_item, &temp)
 			asset_packages = append(asset_packages, temp)
 		}
@@ -113,16 +110,16 @@ func ExtractPackages(package_manifest map[string]string) ([]_Image_asset_package
 }
 
 // map Object IDs to Object TechnicalNames
-func IdToTechnicalName(heirarchy_data *Heirarchy_json) map[string]string {
+func (heirarchy Heirarchy_json) IdToTechnicalName() map[string]string {
 	output := make(map[string]string, 0)
 	var queue []Heirarchy_json
 
-	output[heirarchy_data.Id] = heirarchy_data.TechnicalName
+	output[heirarchy.Id] = heirarchy.TechnicalName
 
-	if heirarchy_data.Children == nil {
+	if heirarchy.Children == nil {
 		return output
 	}
-	queue = append(queue, *heirarchy_data.Children...)
+	queue = append(queue, *heirarchy.Children...)
 	for len(queue) > 0 {
 		h := queue[0]
 		queue = queue[1:]
@@ -155,7 +152,7 @@ func main() {
 		fmt.Println("error parsing JSON:", err)
 		return
 	}
-	_, _, err = ExtractPackages(package_map)
+	_, _, err = ExtractCharacterPackages(package_map)
 	if err != nil {
 		fmt.Println("error extracting characters JSON:", err)
 		return
