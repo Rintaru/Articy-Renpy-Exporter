@@ -36,4 +36,5 @@ func main() {
 		fmt.Println("error extracting characters JSON:", err)
 		return
 	}
+
 }
