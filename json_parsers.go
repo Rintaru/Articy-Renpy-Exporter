@@ -1,4 +1,4 @@
-package internal
+package main
 
 import (
 	"encoding/json"
@@ -63,16 +63,42 @@ type Heirarchy_json struct {
 	Children      *[]Heirarchy_json `Json:"Children,omitempty"`
 }
 
-func (m *Heirarchy_json) FromFile(file_path string) error {
+func (h *Heirarchy_json) FromFile(file_path string) error {
 	data, err := os.ReadFile(file_path)
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal(data, &m); err != nil {
+	if err := json.Unmarshal(data, &h); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// map Object IDs to Object TechnicalNames
+func (h *Heirarchy_json) IdToTechnicalNameMap() map[string]string {
+	output := make(map[string]string, 0)
+	var queue []Heirarchy_json
+
+	output[h.Id] = h.TechnicalName
+
+	if h.Children == nil {
+		return output
+	}
+	queue = append(queue, *h.Children...)
+	for len(queue) > 0 {
+		h := queue[0]
+		queue = queue[1:]
+		output[h.Id] = h.TechnicalName
+
+		if h.Children != nil {
+			queue = append(queue, *h.Children...)
+		}
+
+	}
+
+	return output
+
 }
 
 type Raw_Object_Json struct {
@@ -140,31 +166,5 @@ func ExtractCharacterPackages(raw_object *Raw_Object_Json) (Asset_Json, Characte
 	}
 
 	return asset_packages, character_packages, nil
-
-}
-
-// map Object IDs to Object TechnicalNames
-func (heirarchy Heirarchy_json) IdToTechnicalNameMap() map[string]string {
-	output := make(map[string]string, 0)
-	var queue []Heirarchy_json
-
-	output[heirarchy.Id] = heirarchy.TechnicalName
-
-	if heirarchy.Children == nil {
-		return output
-	}
-	queue = append(queue, *heirarchy.Children...)
-	for len(queue) > 0 {
-		h := queue[0]
-		queue = queue[1:]
-		output[h.Id] = h.TechnicalName
-
-		if h.Children != nil {
-			queue = append(queue, *h.Children...)
-		}
-
-	}
-
-	return output
 
 }
