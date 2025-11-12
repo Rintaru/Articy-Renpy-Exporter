@@ -63,7 +63,7 @@ type Heirarchy_json struct {
 	Children      *[]Heirarchy_json `Json:"Children,omitempty"`
 }
 
-func (m Heirarchy_json) From_file(file_path string) error {
+func (m *Heirarchy_json) From_file(file_path string) error {
 	data, err := os.ReadFile(file_path)
 	if err != nil {
 		return err
