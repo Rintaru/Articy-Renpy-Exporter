@@ -24,16 +24,24 @@ func main() {
 		return
 	}
 
-	_, _, err := object_json.ExtractCharacterPackages()
+	asset_objects, character_objects, err := object_json.ExtractCharacterPackage()
 	if err != nil {
 		fmt.Println("error extracting characters JSON:", err)
 		return
 	}
 
-	_, err := LocalizationJsonFromFile(manifest.LocalizationMap()["Character_Exports"])
+	localization_json, err := LocalizationJsonFromFile(manifest.LocalizationMap()["Character_Exports"])
 	if err != nil {
 		fmt.Println("error extracting characters JSON:", err)
 		return
+	}
+
+	for _, char := range character_objects {
+		_ = Character{
+			Name:       localization_json[char.Properties.DisplayName].Text,
+			Image_path: asset_objects[char.Properties.TechnicalName].AssetRef,
+		}
+
 	}
 
 }

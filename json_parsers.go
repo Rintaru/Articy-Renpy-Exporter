@@ -138,7 +138,7 @@ type Asset_Json = map[string]asset_Object
 type Character_Json = map[string]character_Object
 
 // extract characters and image assets into their respective list containers
-func (r *Raw_Object_Json) ExtractCharacterPackages() (Asset_Json, Character_Json, error) {
+func (r *Raw_Object_Json) ExtractCharacterPackage() (Asset_Json, Character_Json, error) {
 
 	var type_only struct {
 		Type string `json:"Type"`
