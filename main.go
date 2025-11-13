@@ -24,9 +24,16 @@ func main() {
 		return
 	}
 
-	_, _, err = object_json.ExtractCharacterPackages()
+	_, _, err := object_json.ExtractCharacterPackages()
 	if err != nil {
 		fmt.Println("error extracting characters JSON:", err)
 		return
 	}
+
+	_, err := LocalizationJsonFromFile(manifest.LocalizationMap()["Character_Exports"])
+	if err != nil {
+		fmt.Println("error extracting characters JSON:", err)
+		return
+	}
+
 }

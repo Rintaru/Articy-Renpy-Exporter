@@ -168,3 +168,32 @@ func (r *Raw_Object_Json) ExtractCharacterPackages() (Asset_Json, Character_Json
 	return asset_packages, character_packages, nil
 
 }
+
+type Localization_object struct {
+	Text    string
+	Context string
+}
+
+type Localization_Json = map[string]Localization_object
+
+func LocalizationJsonFromFile(file_path string) (Localization_Json, error) {
+	output := make(Localization_Json, 1)
+
+	data, err := os.ReadFile(file_path)
+	if err != nil {
+		return Localization_Json{}, err
+	}
+	temp := make(map[string]map[string]any)
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return Localization_Json{}, err
+	}
+
+	for key, item := range temp {
+		output[key] = Localization_object{
+			Text:    item[""].(map[string]any)["Text"].(string),
+			Context: item["Context"].(string),
+		}
+	}
+
+	return output, err
+}
