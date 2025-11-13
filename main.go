@@ -36,12 +36,25 @@ func main() {
 		return
 	}
 
-	for _, char := range character_objects {
-		_ = Character{
-			Name:       localization_json[char.Properties.DisplayName].Text,
-			Image_path: asset_objects[char.Properties.TechnicalName].AssetRef,
-		}
+	character_list := make([]Character, 0)
 
+	heirarchy_json := Heirarchy_json{}
+	err = heirarchy_json.FromFile("/mnt/c/GIT_REPOS/Visual_Novels/Practice_Export/Organized_Export/hierarchy.json")
+	if err != nil {
+		fmt.Println("error extracting characters JSON:", err)
+		return
+	}
+
+	for _, char := range character_objects {
+		asset_technical_name := heirarchy_json.IdToTechnicalNameMap()[char.Properties.PreviewImage.Asset]
+		character_list = append(character_list, Character{
+			Name:       localization_json[char.Properties.DisplayName].Text,
+			Image_path: asset_objects[asset_technical_name].AssetRef,
+		})
+	}
+
+	for _, item := range character_list {
+		fmt.Println(item)
 	}
 
 }
