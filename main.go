@@ -24,7 +24,7 @@ func main() {
 		return
 	}
 
-	_, _, err = ExtractCharacterPackages(&object_json)
+	_, _, err = object_json.ExtractCharacterPackages()
 	if err != nil {
 		fmt.Println("error extracting characters JSON:", err)
 		return

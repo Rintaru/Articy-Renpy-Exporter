@@ -138,7 +138,7 @@ type Asset_Json = map[string]asset_Object
 type Character_Json = map[string]character_Object
 
 // extract characters and image assets into their respective list containers
-func ExtractCharacterPackages(raw_object *Raw_Object_Json) (Asset_Json, Character_Json, error) {
+func (r *Raw_Object_Json) ExtractCharacterPackages() (Asset_Json, Character_Json, error) {
 
 	var type_only struct {
 		Type string `json:"Type"`
@@ -147,7 +147,7 @@ func ExtractCharacterPackages(raw_object *Raw_Object_Json) (Asset_Json, Characte
 	asset_packages := make(Asset_Json, 0)
 	character_packages := make(Character_Json, 0)
 
-	for _, raw_item := range raw_object.Objects {
+	for _, raw_item := range r.Objects {
 		if err := json.Unmarshal(raw_item, &type_only); err != nil {
 			fmt.Println("error parsing JSON:", err)
 			return Asset_Json{}, Character_Json{}, err
